@@ -1,0 +1,62 @@
+# By James Robertson for csc8110
+version: "3"
+services:
+  web:
+    image: nclcloudcomputing/javabenchmarkapp:latest
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVICE_PORTS=8080
+    networks:
+      - webnet
+  proxy:
+    image: dockercloud/haproxy
+    depends_on:
+      - web
+    ports:
+      - "80:80"
+    environment:
+      - BALANCE=leastconn
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - webnet
+  visualizer:
+    image: dockersamples/visualizer:stable
+    ports:
+      - "88:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+    networks:
+      - webnet
+  database:
+    image: mongo
+    command: mongod
+    ports:
+      - 3306:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+  cadvisor:
+    image: google/cadvisor:latest
+    ports:
+      - "888:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - webnet
+networks:
+  webnet:

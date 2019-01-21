@@ -1,0 +1,2 @@
+# prime-checker
+An example docker-compose file for a load balanced web service running in a swarm with monitoring services. Also included are a couple of helper scripts to record and analyse statistics on the server.
